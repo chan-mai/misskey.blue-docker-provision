@@ -245,7 +245,7 @@ fulltextSearch:
 # ONCE YOU HAVE STARTED THE INSTANCE, DO NOT CHANGE THE
 # ID SETTINGS AFTER THAT!
 
-id: 'aidx'
+id: 'ulid'
 
 #   ┌────────────────┐
 #───┘ Error tracking └──────────────────────────────────────────
@@ -349,4 +349,3 @@ signToActivityPubGet: true
 #     # Disable query truncation. If set to true, the full text of the query will be output to the log.
 #     # default: false
 #     disableQueryTruncation: false
-
