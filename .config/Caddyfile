@@ -19,6 +19,8 @@ misskey.blue {
 
 	handle_errors {
 		@backend_down `{err.status_code} in [500, 501, 502, 503, 504, 522]`
-		redir @backend_down https://maintenance.misskey.blue/
+		handle @backend_down {
+			reverse_proxy maintenance:80
+		}
 	}
 }
