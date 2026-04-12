@@ -1,0 +1,7 @@
+*.env
+
+.config/default.yml
+.config/certificate.pem
+.config/key.pem
+
+data/

@@ -1,0 +1,127 @@
+services:
+  warp-proxy:
+    image: ghcr.io/kingcc/warproxy:latest
+    restart: always
+    volumes:
+      - ./data/warp-proxy:/config
+    environment:
+      - WARP_PLUS=false
+      - HTTP_PORT=1081
+      - TZ=Asia/Tokyo
+      - VERBOSE=true
+    ports:
+      - "1081:1081"
+    networks:
+      - internal_network
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 1081 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+  proxy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    profiles:
+      - proxy
+    volumes:
+      - ./.config/Caddyfile:/etc/caddy/Caddyfile
+      - ./.config/certificate.pem:/etc/ssl/certs/certificate.pem
+      - ./.config/key.pem:/etc/ssl/private/key.pem
+      - ./data/caddy/data:/data
+      - ./data/caddy/config:/config
+    networks:
+      - internal_network
+
+  app:
+    image: ghcr.io/lqvp/misskey-tempura:2.0.3@sha256:a835245d9174e2245dbccd63f86a224696b4d879844bd94978bf4b79e7190468
+    restart: always
+    environment:
+      COREPACK_INTEGRITY_KEYS: 0
+    links:
+      - db
+      - keydb
+    depends_on:
+      db:
+        condition: service_healthy
+      keydb:
+        condition: service_healthy
+      warp-proxy:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - internal_network
+    volumes:
+      - ./.config/default.yml:/misskey/.config/default.yml:ro
+
+  keydb:
+    restart: always
+    image: eqalpha/keydb:alpine
+    networks:
+      - internal_network
+    volumes:
+      - ./data/keydb:/data
+    healthcheck:
+      test: "redis-cli ping"
+      interval: 5s
+      retries: 20
+
+  db:
+    restart: always
+    image: groonga/pgroonga:latest-debian-18
+    ports:
+      - '5430:5432'
+    networks:
+      internal_network:
+      misskey-postgres:
+          ipv4_address: 10.0.0.2
+    env_file:
+      - .config/.env
+    volumes:
+      - ./data/pg-18:/var/lib/postgresql
+    healthcheck:
+      test: "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
+      interval: 5s
+      retries: 20
+
+  backup:
+    image: ghcr.io/team-shahu/misskey-backup:2025.12.17@sha256:c2d841c62e422da41fbd19d46da5c030364c29c3d0f33f6782601d491fba4092
+    container_name: misskey-backup-go
+    restart: always
+    environment:
+      TZ: Asia/Tokyo
+    networks:
+      misskey-postgres:
+        ipv4_address: 10.0.0.3
+    env_file:
+      - .config/.env
+    volumes:
+      - mi-backups:/app/backups
+      - .config:/app/config:ro
+    logging:
+      options:
+        max-size: 5m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 1m
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+networks:
+  internal_network:
+  misskey-postgres:
+    external: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/27
+
+volumes:
+  mi-backups:
