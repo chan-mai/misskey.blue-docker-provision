@@ -41,6 +41,8 @@ services:
   maintenance:
     image: caddy:2-alpine
     restart: always
+    profiles:
+      - proxy
     volumes:
       - ./.config/maintenance.Caddyfile:/etc/caddy/Caddyfile:ro
       - ./html:/usr/share/caddy:ro
