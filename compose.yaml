@@ -56,11 +56,11 @@ services:
       COREPACK_INTEGRITY_KEYS: 0
     links:
       - db
-      - keydb
+      - redis
     depends_on:
       db:
         condition: service_healthy
-      keydb:
+      redis:
         condition: service_healthy
       warp-proxy:
         condition: service_healthy
@@ -71,13 +71,13 @@ services:
     volumes:
       - ./.config/default.yml:/misskey/.config/default.yml:ro
 
-  keydb:
+  redis:
     restart: always
-    image: eqalpha/keydb:alpine
+    image: redis:7-alpine
     networks:
       - internal_network
     volumes:
-      - ./data/keydb:/data
+      - ./data/redis:/data
     healthcheck:
       test: "redis-cli ping"
       interval: 5s
