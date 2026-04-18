@@ -294,7 +294,7 @@ id: 'ulid'
 #outgoingAddressFamily: dual
 
 # Proxy for HTTP/HTTPS
-proxy: http://warp-proxy:1081
+# proxy: http://warp-proxy:1081
 
 proxyBypassHosts:
   - api.deepl.com
