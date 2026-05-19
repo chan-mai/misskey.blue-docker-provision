@@ -13,6 +13,7 @@ services:
       - ./.config/key.pem:/etc/ssl/private/key.pem
       - ./data/caddy/data:/data
       - ./data/caddy/config:/config
+      - ./data/caddy/logs:/var/log/caddy
     networks:
       - internal_network
 
