@@ -30,10 +30,25 @@ misskey.blue {
 	handle_errors {
 		@backend_down `{err.status_code} in [500, 501, 502, 503, 504, 522]`
 		handle @backend_down {
-			reverse_proxy maintenance:80 {
-				handle_response {
-					copy_response_headers
-					copy_response 503
+			# ブラウザ向けページのみ200, API・連合向けは503
+			@page {
+				not path /api/*
+				header Accept *text/html*
+			}
+			handle @page {
+				reverse_proxy maintenance:80 {
+					handle_response {
+						copy_response_headers
+						copy_response 200
+					}
+				}
+			}
+			handle {
+				reverse_proxy maintenance:80 {
+					handle_response {
+						copy_response_headers
+						copy_response 503
+					}
 				}
 			}
 		}
