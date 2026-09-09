@@ -1,6 +1,6 @@
 # misskey.blue-docker-provision
 misskey.blueをいい感じに構築/運用するためのレポジトリ  
-サーバ構築はAnsible、デプロイは[doco-cd](https://github.com/kimdre/doco-cd)、秘密ファイルは[sops](https://github.com/getsops/sops)で暗号化してこのリポジトリで管理しています。  
+サーバ構築はAnsible、デプロイは[doco-cd](https://github.com/kimdre/doco-cd)、秘密ファイルは[sops](https://github.com/getsops/sops)で暗号化してこのレポジトリで管理しています。  
 
 ## 構成
 | パス | 内容 |
@@ -59,7 +59,7 @@ ufwはSSHを`ufw_ssh_allow_from`(既定はtailnetの`100.64.0.0/10`)からのみ
 ufw有効化後は公開IPでSSHできなくなるため、以降の`ansible-playbook`実行前に`inventory.yml`の`ansible_host`をTailscaleのアドレス(またはMagicDNS名)へ変更すること(`migration_host`には公開IPを残す)。  
 移行時はデータ投入前にdoco-cdが起動しないようにするため、doco-cdの起動は`--tags start`で行うこと。  
 
-起動後、doco-cdは`doco-cd/poll.yaml`の間隔でこのリポジトリのmainを取得し、クレデンシャルを復号/`compose.yaml`をデプロイする。  
+起動後、doco-cdは`doco-cd/poll.yaml`の間隔でこのレポジトリのmainを取得し、クレデンシャルを復号/`compose.yaml`をデプロイする。  
 
 
 ## 更新
