@@ -1,0 +1,109 @@
+- name: Prepare migration key on old host
+  hosts: old
+  become: true
+  tasks:
+    - name: Generate migration SSH key
+      community.crypto.openssh_keypair:
+        path: /root/.ssh/migrate_ed25519
+        type: ed25519
+        comment: misskey-migration
+      register: migrate_key
+
+- name: Prepare new host
+  hosts: new
+  become: true
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Authorize migration key
+      ansible.posix.authorized_key:
+        user: "{{ ansible_user }}"
+        key: "{{ hostvars['old'].migrate_key.public_key }}"
+
+    - name: Allow SSH from old host
+      community.general.ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+        src: "{{ hostvars['old'].ansible_host }}"
+
+    - name: Stop project containers
+      ansible.builtin.shell: set -o pipefail && docker ps -q --filter label=com.docker.compose.project={{ compose_project }} | xargs -r docker stop
+      args:
+        executable: /bin/bash
+      when: final | bool
+      changed_when: true
+
+- name: Sync data from old host
+  hosts: old
+  become: true
+  vars_files:
+    - vars/main.yml
+  vars:
+    sync_targets:
+      - { src: "{{ old_checkout_dir }}/data/pg-18", volume: pg-18 }
+      - { src: "{{ old_checkout_dir }}/data/redis", volume: redis }
+      - { src: "{{ old_checkout_dir }}/data/caddy/data", volume: caddy-data }
+      - { src: "{{ old_checkout_dir }}/data/caddy/config", volume: caddy-config }
+      - { src: "{{ old_checkout_dir }}/data/caddy/logs", volume: caddy-logs }
+      - { src: "/var/lib/docker/volumes/{{ compose_project }}_mi-backups/_data", volume: mi-backups }
+  tasks:
+    - name: Stop services on old host
+      community.docker.docker_compose_v2:
+        project_src: "{{ old_checkout_dir }}"
+        services:
+          - app
+          - backup
+          - db
+          - redis
+        state: stopped
+      when: final | bool
+
+    - name: Rsync data to new host
+      ansible.builtin.command: >
+        rsync -aH --delete --numeric-ids
+        -e "ssh -i /root/.ssh/migrate_ed25519 -o StrictHostKeyChecking=accept-new"
+        --rsync-path="sudo rsync"
+        {{ item.src }}/
+        {{ ansible_user }}@{{ hostvars['new'].ansible_host }}:/var/lib/docker/volumes/{{ compose_project }}_{{ item.volume }}/_data/
+      loop: "{{ sync_targets }}"
+      changed_when: true
+
+- name: Start services on new host
+  hosts: new
+  become: true
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Start db and redis
+      ansible.builtin.command: docker start {{ compose_project }}-db-1 {{ compose_project }}-redis-1
+      when: final | bool
+      changed_when: true
+
+    - name: Wait for db and redis to be healthy
+      ansible.builtin.command: docker inspect --format '{{ "{{" }}.State.Health.Status{{ "}}" }}' {{ item }}
+      loop:
+        - "{{ compose_project }}-db-1"
+        - "{{ compose_project }}-redis-1"
+      register: health
+      until: health.stdout == 'healthy'
+      retries: 30
+      delay: 5
+      changed_when: false
+      when: final | bool
+
+    - name: Start remaining containers
+      ansible.builtin.shell: set -o pipefail && docker ps -aq --filter label=com.docker.compose.project={{ compose_project }} --filter status=exited | xargs -r docker start
+      args:
+        executable: /bin/bash
+      when: final | bool
+      changed_when: true
+
+    - name: Remove SSH rule for old host
+      community.general.ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+        src: "{{ hostvars['old'].ansible_host }}"
+        delete: true
+      when: final | bool

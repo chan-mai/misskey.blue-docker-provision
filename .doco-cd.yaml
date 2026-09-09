@@ -1,0 +1,7 @@
+name: misskeyblue-docker-provision
+reference: main
+compose_files:
+  - compose.yaml
+profiles:
+  - proxy
+timeout: 600
