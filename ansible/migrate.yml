@@ -25,7 +25,7 @@
         rule: allow
         port: "22"
         proto: tcp
-        src: "{{ hostvars['old'].ansible_host }}"
+        src: "{{ hostvars['old'].migration_source_ip | default(hostvars['old'].ansible_host) }}"
 
     - name: Stop data containers
       ansible.builtin.shell: >
@@ -110,6 +110,6 @@
         rule: allow
         port: "22"
         proto: tcp
-        src: "{{ hostvars['old'].ansible_host }}"
+        src: "{{ hostvars['old'].migration_source_ip | default(hostvars['old'].ansible_host) }}"
         delete: true
       when: final | bool
