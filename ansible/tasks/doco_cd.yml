@@ -1,13 +1,18 @@
-- name: Create doco-cd directories
+- name: Create doco-cd directory
   ansible.builtin.file:
-    path: "{{ item.path }}"
+    path: "{{ doco_cd_dir }}"
     state: directory
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
-    mode: "{{ item.mode }}"
-  loop:
-    - { path: "{{ doco_cd_dir }}", mode: "0750" }
-    - { path: "{{ doco_cd_dir }}/data", mode: "0700" }
+    mode: "0750"
+
+- name: Create doco-cd data directory
+  ansible.builtin.file:
+    path: "{{ doco_cd_dir }}/data"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
 
 - name: Copy doco-cd compose files
   ansible.builtin.copy:
@@ -24,8 +29,8 @@
   ansible.builtin.copy:
     content: "{{ item.content }}"
     dest: "{{ doco_cd_dir }}/{{ item.name }}"
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+    owner: root
+    group: root
     mode: "0600"
   loop:
     - { name: sops_age_key.txt, content: "{{ doco_cd_age_key }}" }

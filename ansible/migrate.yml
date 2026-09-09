@@ -27,8 +27,12 @@
         proto: tcp
         src: "{{ hostvars['old'].ansible_host }}"
 
-    - name: Stop project containers
-      ansible.builtin.shell: set -o pipefail && docker ps -q --filter label=com.docker.compose.project={{ compose_project }} | xargs -r docker stop
+    - name: Stop data containers
+      ansible.builtin.shell: >
+        set -o pipefail &&
+        for s in app backup db redis; do
+        docker ps -q --filter label=com.docker.compose.project={{ compose_project }} --filter label=com.docker.compose.service=$s;
+        done | xargs -r docker stop
       args:
         executable: /bin/bash
       when: final | bool
@@ -67,7 +71,9 @@
         {{ item.src }}/
         {{ ansible_user }}@{{ hostvars['new'].migration_host | default(hostvars['new'].ansible_host) }}:/var/lib/docker/volumes/{{ compose_project }}_{{ item.volume }}/_data/
       loop: "{{ sync_targets }}"
+      register: rsync_result
       changed_when: true
+      failed_when: rsync_result.rc not in [0, 24]
 
 - name: Start services on new host
   hosts: new

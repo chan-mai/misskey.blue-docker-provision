@@ -41,8 +41,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - "3000:3000"
     networks:
       - internal_network
     volumes:
@@ -64,7 +62,7 @@ services:
     restart: always
     image: groonga/pgroonga:latest-debian-18
     ports:
-      - '5430:5432'
+      - "127.0.0.1:5432:5432"
     networks:
       internal_network:
       misskey-postgres:
@@ -106,6 +104,9 @@ services:
 networks:
   internal_network:
     enable_ipv6: true
+    ipam:
+      config:
+        - subnet: fd3c:9a51:7e08::/64
   misskey-postgres:
     external: true
     driver: bridge
