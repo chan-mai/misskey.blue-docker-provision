@@ -5,6 +5,7 @@ all:
   hosts:
     new:
       ansible_host: 203.0.113.10
+      migration_host: 203.0.113.10
     old:
       ansible_host: 198.51.100.10
       old_checkout_dir: /home/ubuntu/misskey.blue-docker-provision

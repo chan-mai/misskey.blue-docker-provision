@@ -56,7 +56,7 @@ ansible-playbook setup.yml --tags start
 
 `setup.yml`はホスト名(`vars/main.yml`の`server_hostname`), TZ, Docker, `misskey-postgres`ネットワーク, 永続データボリューム, 管理ユーザ(sudo, dockerグループ, `admin_user_ssh_keys`の公開鍵)を設定し、doco-cd一式を配置した後、Tailscale(tailnetへ参加, Tailscale SSH有効)とufwを設定する。
 ufwはSSHを`ufw_ssh_allow_from`(既定はtailnetの`100.64.0.0/10`)からのみ許可し、TailscaleのUDP 41641以外の受信を拒否する。Dockerが公開するポート(80, 443)はufwを経由しない。
-ufw有効化後は公開IPでSSHできなくなるため、以降の`ansible-playbook`実行前に`inventory.yml`の`ansible_host`をTailscaleのアドレス(またはMagicDNS名)へ変更すること。
+ufw有効化後は公開IPでSSHできなくなるため、以降の`ansible-playbook`実行前に`inventory.yml`の`ansible_host`をTailscaleのアドレス(またはMagicDNS名)へ変更すること(`migration_host`には公開IPを残す)。
 移行時はデータ投入前にdoco-cdが起動しないようにするため、doco-cdの起動は`--tags start`で行うこと。
 
 起動後、doco-cdは`doco-cd/poll.yaml`の間隔でこのリポジトリのmainを取得し、クレデンシャルを復号/`compose.yaml`をデプロイする。
