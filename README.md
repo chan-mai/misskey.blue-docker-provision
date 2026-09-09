@@ -1,6 +1,6 @@
 # misskey.blue-docker-provision
-misskey.blueをいい感じに構築/運用するためのレポジトリ
-サーバ構築はAnsible、デプロイは[doco-cd](https://github.com/kimdre/doco-cd)、秘密ファイルは[sops](https://github.com/getsops/sops)で暗号化してこのリポジトリで管理しています。
+misskey.blueをいい感じに構築/運用するためのレポジトリ  
+サーバ構築はAnsible、デプロイは[doco-cd](https://github.com/kimdre/doco-cd)、秘密ファイルは[sops](https://github.com/getsops/sops)で暗号化してこのリポジトリで管理しています。  
 
 ## 構成
 | パス | 内容 |
@@ -22,7 +22,7 @@ misskey.blueをいい感じに構築/運用するためのレポジトリ
   ```
 
 ## 秘密ファイル
-`.sops.yaml`に受信者(age公開鍵)を列挙している。サーバ用鍵とローカル鍵の両方で復号可
+`.sops.yaml`に受信者(age公開鍵)を列挙している。サーバ用鍵とローカル鍵の両方で復号可  
 
 | ファイル | 内容 |
 |---|---|
@@ -38,13 +38,13 @@ misskey.blueをいい感じに構築/運用するためのレポジトリ
 | `admin_user_password_hash` | 管理ユーザ(`ansible/vars/main.yml`の`admin_user`)のパスワードハッシュ(`openssl passwd -6`で生成) |
 | `tailscale_auth_key` | Tailscaleの認証キー(管理コンソールで発行) |
 
-編集はローカル鍵がある環境で行う。
+編集はローカル鍵がある環境で行う。  
 ```bash
 sops edit .config/.env
 sops edit ansible/vars/secrets.sops.yml
 ```
-
-鍵を作り直す場合は`age-keygen`で鍵対を生成し、公開鍵を`.sops.yaml`へ設定した上で`sops updatekeys <file>`で各ファイルを再暗号化すること。
+  
+鍵を作り直す場合は`age-keygen`で鍵対を生成し、公開鍵を`.sops.yaml`へ設定した上で`sops updatekeys <file>`で各ファイルを再暗号化すること。  
 
 ## サーバ構築
 ```bash
@@ -54,12 +54,12 @@ ansible-playbook setup.yml
 ansible-playbook setup.yml --tags start
 ```
 
-`setup.yml`はホスト名(`vars/main.yml`の`server_hostname`), TZ, Docker, `misskey-postgres`ネットワーク, 永続データボリューム, 管理ユーザ(sudo, dockerグループ, `admin_user_ssh_keys`の公開鍵)を設定し、doco-cd一式を配置した後、Tailscale(tailnetへ参加, Tailscale SSH有効)とufwを設定する。
-ufwはSSHを`ufw_ssh_allow_from`(既定はtailnetの`100.64.0.0/10`)からのみ許可し、TailscaleのUDP 41641以外の受信を拒否する。Dockerが公開するポート(80, 443)はufwを経由しない。
-ufw有効化後は公開IPでSSHできなくなるため、以降の`ansible-playbook`実行前に`inventory.yml`の`ansible_host`をTailscaleのアドレス(またはMagicDNS名)へ変更すること(`migration_host`には公開IPを残す)。
-移行時はデータ投入前にdoco-cdが起動しないようにするため、doco-cdの起動は`--tags start`で行うこと。
+`setup.yml`はホスト名(`vars/main.yml`の`server_hostname`), TZ, Docker, `misskey-postgres`ネットワーク, 永続データボリューム, 管理ユーザ(sudo, dockerグループ, `admin_user_ssh_keys`の公開鍵)を設定し、doco-cd一式を配置した後、Tailscale(tailnetへ参加, Tailscale SSH有効)とufwを設定する。  
+ufwはSSHを`ufw_ssh_allow_from`(既定はtailnetの`100.64.0.0/10`)からのみ許可し、TailscaleのUDP 41641以外の受信を拒否する。Dockerが公開するポート(80, 443)はufwを経由しない。  
+ufw有効化後は公開IPでSSHできなくなるため、以降の`ansible-playbook`実行前に`inventory.yml`の`ansible_host`をTailscaleのアドレス(またはMagicDNS名)へ変更すること(`migration_host`には公開IPを残す)。  
+移行時はデータ投入前にdoco-cdが起動しないようにするため、doco-cdの起動は`--tags start`で行うこと。  
 
-起動後、doco-cdは`doco-cd/poll.yaml`の間隔でこのリポジトリのmainを取得し、クレデンシャルを復号/`compose.yaml`をデプロイする。
+起動後、doco-cdは`doco-cd/poll.yaml`の間隔でこのリポジトリのmainを取得し、クレデンシャルを復号/`compose.yaml`をデプロイする。  
 
 
 ## 更新
