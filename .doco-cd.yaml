@@ -1,8 +1,0 @@
-name: misskeyblue-docker-provision
-reference: main
-working_dir: hosts/misskey-blue
-compose_files:
-  - compose.yaml
-profiles:
-  - proxy
-timeout: 600
