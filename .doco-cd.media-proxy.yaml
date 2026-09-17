@@ -1,0 +1,6 @@
+name: media-proxy
+reference: main
+working_dir: hosts/media-proxy
+compose_files:
+  - compose.yaml
+timeout: 600

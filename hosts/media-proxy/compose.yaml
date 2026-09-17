@@ -1,0 +1,37 @@
+services:
+  proxy:
+    image: caddy:2
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ../../shared/certificate.pem:/etc/ssl/certs/certificate.pem
+      - ../../shared/key.pem:/etc/ssl/private/key.pem
+      - caddy-data:/data
+      - caddy-config:/config
+      - caddy-logs:/var/log/caddy
+    networks:
+      - internal_network
+
+  media-proxy:
+    image: ghcr.io/nyaone/media-proxy-rs:v0.3.0@sha256:b78a982b41eb09361ec347998cfbb76aeeb3e72bce9dc639dd1d6e0e401e636a
+    restart: always
+    environment:
+      RUST_LOG: error
+      SIZE_LIMIT: "33554432"
+    networks:
+      - internal_network
+
+networks:
+  internal_network:
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: fd3c:9a51:7e09::/64
+
+volumes:
+  caddy-data:
+  caddy-config:
+  caddy-logs:

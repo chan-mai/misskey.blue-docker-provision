@@ -29,10 +29,10 @@ jobs:
       - name: Get current image info
         id: current
         run: |
-          # compose.yamlから現在のイメージ情報を取得
-          CURRENT_LINE=$(grep "ghcr.io/team-shahu/misskey-backup" compose.yaml)
+          # hosts/misskey-blue/compose.yamlから現在のイメージ情報を取得
+          CURRENT_LINE=$(grep "ghcr.io/team-shahu/misskey-backup" hosts/misskey-blue/compose.yaml)
           echo "current_line=$CURRENT_LINE" >> $GITHUB_OUTPUT
-          echo "Current line from compose.yaml: $CURRENT_LINE"
+          echo "Current line from hosts/misskey-blue/compose.yaml: $CURRENT_LINE"
 
           # 現在のバージョンとダイジェストを抽出
           CURRENT_VERSION=$(echo "$CURRENT_LINE" | sed -n 's/.*misskey-backup:\([^@]*\)@.*/\1/p')
@@ -110,7 +110,7 @@ jobs:
             echo "✅ Already up to date"
           fi
 
-      - name: Update compose.yaml
+      - name: Update hosts/misskey-blue/compose.yaml
         if: steps.check.outputs.update_available == 'true'
         run: |
           LATEST_VERSION="${{ steps.latest.outputs.latest_version }}"
@@ -119,15 +119,15 @@ jobs:
           # 新しいイメージ行を作成
           NEW_LINE="    image: ghcr.io/team-shahu/misskey-backup:${LATEST_VERSION}@${FULL_DIGEST}"
 
-          # compose.yamlを更新
-          sed -i "s|.*ghcr.io/team-shahu/misskey-backup.*|${NEW_LINE}|" compose.yaml
+          # hosts/misskey-blue/compose.yamlを更新
+          sed -i "s|.*ghcr.io/team-shahu/misskey-backup.*|${NEW_LINE}|" hosts/misskey-blue/compose.yaml
 
-          echo "Updated compose.yaml"
+          echo "Updated hosts/misskey-blue/compose.yaml"
           echo "New image reference: ${NEW_LINE}"
 
           # 変更内容を確認
           echo "--- Git diff ---"
-          git diff compose.yaml
+          git diff hosts/misskey-blue/compose.yaml
 
       - name: Create Pull Request
         if: steps.check.outputs.update_available == 'true'

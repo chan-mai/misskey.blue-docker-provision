@@ -1,0 +1,11 @@
+server_hostname: misskey-blue
+compose_project: misskeyblue-docker-provision
+doco_cd_target: misskey-blue
+create_misskey_postgres_network: true
+data_volumes:
+  - pg-18
+  - redis
+  - caddy-data
+  - caddy-config
+  - caddy-logs
+  - mi-backups

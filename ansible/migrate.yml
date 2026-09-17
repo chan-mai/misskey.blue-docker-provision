@@ -12,8 +12,6 @@
 - name: Prepare new host
   hosts: new
   become: true
-  vars_files:
-    - vars/main.yml
   tasks:
     - name: Authorize migration key
       ansible.posix.authorized_key:
@@ -35,14 +33,12 @@
         done | xargs -r docker stop
       args:
         executable: /bin/bash
-      when: final | bool
+      when: final | default(false) | bool
       changed_when: true
 
 - name: Sync data from old host
   hosts: old
   become: true
-  vars_files:
-    - vars/main.yml
   vars:
     sync_targets:
       - { src: "{{ old_checkout_dir }}/data/pg-18", volume: pg-18 }
@@ -61,7 +57,7 @@
           - db
           - redis
         state: stopped
-      when: final | bool
+      when: final | default(false) | bool
 
     - name: Rsync data to new host
       ansible.builtin.command: >
@@ -78,12 +74,10 @@
 - name: Start services on new host
   hosts: new
   become: true
-  vars_files:
-    - vars/main.yml
   tasks:
     - name: Start db and redis
       ansible.builtin.command: docker start {{ compose_project }}-db-1 {{ compose_project }}-redis-1
-      when: final | bool
+      when: final | default(false) | bool
       changed_when: true
 
     - name: Wait for db and redis to be healthy
@@ -96,13 +90,13 @@
       retries: 30
       delay: 5
       changed_when: false
-      when: final | bool
+      when: final | default(false) | bool
 
     - name: Start remaining containers
       ansible.builtin.shell: set -o pipefail && docker ps -aq --filter label=com.docker.compose.project={{ compose_project }} --filter status=exited | xargs -r docker start
       args:
         executable: /bin/bash
-      when: final | bool
+      when: final | default(false) | bool
       changed_when: true
 
     - name: Remove SSH rule for old host
@@ -112,4 +106,4 @@
         proto: tcp
         src: "{{ hostvars['old'].migration_source_ip | default(hostvars['old'].ansible_host) }}"
         delete: true
-      when: final | bool
+      when: final | default(false) | bool

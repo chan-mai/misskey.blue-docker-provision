@@ -45,6 +45,7 @@
     ipam_config:
       - subnet: 10.0.0.0/27
         gateway: 10.0.0.1
+  when: create_misskey_postgres_network
 
 - name: Create data volumes
   community.docker.docker_volume:

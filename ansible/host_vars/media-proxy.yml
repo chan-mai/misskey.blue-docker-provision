@@ -1,0 +1,5 @@
+server_hostname: media-proxy
+compose_project: media-proxy
+doco_cd_target: media-proxy
+create_misskey_postgres_network: false
+data_volumes: []

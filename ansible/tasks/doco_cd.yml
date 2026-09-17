@@ -14,16 +14,21 @@
     group: root
     mode: "0700"
 
-- name: Copy doco-cd compose files
+- name: Copy doco-cd compose file
   ansible.builtin.copy:
-    src: "../doco-cd/{{ item }}"
-    dest: "{{ doco_cd_dir }}/{{ item }}"
+    src: ../doco-cd/compose.yaml
+    dest: "{{ doco_cd_dir }}/compose.yaml"
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: "0644"
-  loop:
-    - compose.yaml
-    - poll.yaml
+
+- name: Place doco-cd poll config
+  ansible.builtin.template:
+    src: ../doco-cd/poll.yaml.j2
+    dest: "{{ doco_cd_dir }}/poll.yaml"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
 
 - name: Place doco-cd secret files
   ansible.builtin.copy:
@@ -33,6 +38,6 @@
     group: root
     mode: "0600"
   loop:
-    - { name: sops_age_key.txt, content: "{{ doco_cd_age_key }}" }
+    - { name: sops_age_key.txt, content: "{{ doco_cd_age_keys[inventory_hostname] }}" }
     - { name: apprise_notify_urls.txt, content: "{{ apprise_notify_urls }}" }
   no_log: true

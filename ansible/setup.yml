@@ -1,8 +1,6 @@
-- name: Provision Misskey host
-  hosts: new
+- name: Provision host
+  hosts: servers
   become: true
-  vars_files:
-    - vars/main.yml
   pre_tasks:
     - name: Load secrets
       community.sops.load_vars:
@@ -14,7 +12,8 @@
         that:
           - tailscale_auth_key is defined and tailscale_auth_key != 'CHANGE_ME'
           - admin_user_password_hash is match('^\$6\$')
-        fail_msg: "set tailscale_auth_key and admin_user_password_hash in vars/secrets.sops.yml"
+          - doco_cd_age_keys[inventory_hostname] is defined
+        fail_msg: "set tailscale_auth_key, admin_user_password_hash and doco_cd_age_keys.{{ inventory_hostname }} in vars/secrets.sops.yml"
         quiet: true
       tags: [always]
   tasks:
