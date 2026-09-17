@@ -11,16 +11,16 @@ media-proxy.misskey.blue {
 		}
 	}
 
-	reverse_proxy media-proxy:3000 {
+	reverse_proxy media-proxy:12766 {
 		header_up X-Real-IP {header.CF-Connecting-IP}
 		header_up X-Forwarded-For {header.CF-Connecting-IP}
 		header_up X-Forwarded-Proto {scheme}
 		header_up X-Forwarded-Host {host}
 
-		# health check
+		# health check (クエリ無しは400応答)
 		health_uri /
 		health_interval 10s
 		health_timeout 2s
-		health_status 200
+		health_status 400
 	}
 }

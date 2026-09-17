@@ -29,80 +29,35 @@ jobs:
       - name: Get current image info
         id: current
         run: |
-          # hosts/media-proxy/compose.yamlから現在のイメージ情報を取得
-          CURRENT_LINE=$(grep "ghcr.io/nyaone/media-proxy-rs" hosts/media-proxy/compose.yaml)
-          echo "current_line=$CURRENT_LINE" >> $GITHUB_OUTPUT
+          # hosts/media-proxy/compose.yamlから現在のダイジェストを取得
+          CURRENT_LINE=$(grep "ghcr.io/yojo-art/media-proxy-rs" hosts/media-proxy/compose.yaml)
           echo "Current line from hosts/media-proxy/compose.yaml: $CURRENT_LINE"
 
-          # 現在のバージョンとダイジェストを抽出
-          CURRENT_VERSION=$(echo "$CURRENT_LINE" | sed -n 's/.*media-proxy-rs:\([^@]*\)@.*/\1/p')
           CURRENT_FULL_DIGEST=$(echo "$CURRENT_LINE" | sed -n 's/.*@\(sha256:[a-f0-9]*\).*/\1/p')
-          CURRENT_DIGEST=$(echo "$CURRENT_FULL_DIGEST" | sed 's/sha256://')
-
-          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          echo "current_digest=$CURRENT_DIGEST" >> $GITHUB_OUTPUT
           echo "current_full_digest=$CURRENT_FULL_DIGEST" >> $GITHUB_OUTPUT
-          echo "Current version: $CURRENT_VERSION"
-          echo "Current digest: $CURRENT_DIGEST"
-          echo "Current full digest: $CURRENT_FULL_DIGEST"
+          echo "Current digest: $CURRENT_FULL_DIGEST"
 
       - name: Get latest image info
         id: latest
         run: |
-          # レジストリから最新のイメージ情報を取得
-          # まず、利用可能な全てのタグを取得
-          TOKEN=$(curl -s "https://ghcr.io/token?scope=repository:nyaone/media-proxy-rs:pull" | jq -r .token)
-          TAGS=$(curl -s -H "Authorization: Bearer $TOKEN" "https://ghcr.io/v2/nyaone/media-proxy-rs/tags/list" | jq -r '.tags[]' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+          # mainタグの最新ダイジェストを取得(リリースタグが無いためダイジェスト追従)
+          FULL_DIGEST=$(docker buildx imagetools inspect "ghcr.io/yojo-art/media-proxy-rs:main" --format "{{json .Manifest}}" | jq -r '.digest')
+          SHORT_DIGEST=$(echo "$FULL_DIGEST" | sed 's/sha256://' | cut -c1-12)
 
-          echo "Latest tag: $TAGS"
-          LATEST_VERSION="$TAGS"
-
-          # 最新バージョンの完全なダイジェストを取得
-          FULL_DIGEST=$(docker buildx imagetools inspect "ghcr.io/nyaone/media-proxy-rs:$LATEST_VERSION" --format "{{json .Manifest}}" | jq -r '.digest')
-          LATEST_DIGEST=$(echo "$FULL_DIGEST" | sed 's/sha256://')
-
-          echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
-          echo "latest_digest=$LATEST_DIGEST" >> $GITHUB_OUTPUT
           echo "latest_full_digest=$FULL_DIGEST" >> $GITHUB_OUTPUT
-          echo "Latest version: $LATEST_VERSION"
-          echo "Latest digest: $LATEST_DIGEST"
-          echo "Latest full digest: $FULL_DIGEST"
+          echo "latest_short_digest=$SHORT_DIGEST" >> $GITHUB_OUTPUT
+          echo "Latest digest: $FULL_DIGEST"
 
       - name: Check for updates
         id: check
         run: |
-          CURRENT_VERSION="${{ steps.current.outputs.current_version }}"
-          CURRENT_DIGEST="${{ steps.current.outputs.current_digest }}"
-          LATEST_VERSION="${{ steps.latest.outputs.latest_version }}"
-          LATEST_DIGEST="${{ steps.latest.outputs.latest_digest }}"
+          CURRENT="${{ steps.current.outputs.current_full_digest }}"
+          LATEST="${{ steps.latest.outputs.latest_full_digest }}"
 
-          echo "=== Comparing versions and digests ==="
-          echo "  Current version: $CURRENT_VERSION"
-          echo "  Latest version:  $LATEST_VERSION"
-          echo "  Current digest:  $CURRENT_DIGEST"
-          echo "  Latest digest:   $LATEST_DIGEST"
-          echo ""
+          echo "Current: $CURRENT"
+          echo "Latest:  $LATEST"
 
-          UPDATE_NEEDED=false
-
-          if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
-            echo "Version mismatch detected: $CURRENT_VERSION -> $LATEST_VERSION"
-            UPDATE_NEEDED=true
-          else
-            echo "Version is up to date: $CURRENT_VERSION"
-          fi
-
-          if [ "$CURRENT_DIGEST" != "$LATEST_DIGEST" ]; then
-            echo "Digest mismatch detected"
-            echo "  Current: $CURRENT_DIGEST"
-            echo "  Latest:  $LATEST_DIGEST"
-            UPDATE_NEEDED=true
-          else
-            echo "Digest is up to date"
-          fi
-
-          echo ""
-          if [ "$UPDATE_NEEDED" = true ]; then
+          if [ -n "$LATEST" ] && [ "$CURRENT" != "$LATEST" ]; then
             echo "update_available=true" >> $GITHUB_OUTPUT
             echo "Update available"
           else
@@ -113,19 +68,12 @@ jobs:
       - name: Update hosts/media-proxy/compose.yaml
         if: steps.check.outputs.update_available == 'true'
         run: |
-          LATEST_VERSION="${{ steps.latest.outputs.latest_version }}"
           FULL_DIGEST="${{ steps.latest.outputs.latest_full_digest }}"
+          NEW_LINE="    image: ghcr.io/yojo-art/media-proxy-rs:main@${FULL_DIGEST}"
 
-          # 新しいイメージ行を作成
-          NEW_LINE="    image: ghcr.io/nyaone/media-proxy-rs:${LATEST_VERSION}@${FULL_DIGEST}"
+          sed -i "s|.*ghcr.io/yojo-art/media-proxy-rs.*|${NEW_LINE}|" hosts/media-proxy/compose.yaml
 
-          # hosts/media-proxy/compose.yamlを更新
-          sed -i "s|.*ghcr.io/nyaone/media-proxy-rs.*|${NEW_LINE}|" hosts/media-proxy/compose.yaml
-
-          echo "Updated hosts/media-proxy/compose.yaml"
           echo "New image reference: ${NEW_LINE}"
-
-          # 変更内容を確認
           echo "--- Git diff ---"
           git diff hosts/media-proxy/compose.yaml
 
@@ -134,35 +82,23 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: update media-proxy-rs to ${{ steps.latest.outputs.latest_version }}"
-          title: "chore: Update media-proxy-rs to ${{ steps.latest.outputs.latest_version }}"
+          commit-message: "chore: update media-proxy-rs to main@${{ steps.latest.outputs.latest_short_digest }}"
+          title: "chore: Update media-proxy-rs to main@${{ steps.latest.outputs.latest_short_digest }}"
           body: |
             ## media-proxy-rsイメージの更新
 
-            このPRは自動的に生成されました。
+            このPRは自動的に生成されました。mainタグのダイジェスト更新を追従します。
 
             ### 変更内容
             | 項目 | 現在 | 更新後 |
             |------|------|--------|
-            | バージョン | `${{ steps.current.outputs.current_version }}` | `${{ steps.latest.outputs.latest_version }}` |
-            | ダイジェスト | `${{ steps.current.outputs.current_digest }}` | `${{ steps.latest.outputs.latest_digest }}` |
-
-            ### 詳細
-
-            **以前のイメージ:**
-            ```
-            ghcr.io/nyaone/media-proxy-rs:${{ steps.current.outputs.current_version }}@${{ steps.current.outputs.current_full_digest }}
-            ```
-
-            **新しいイメージ:**
-            ```
-            ghcr.io/nyaone/media-proxy-rs:${{ steps.latest.outputs.latest_version }}@${{ steps.latest.outputs.latest_full_digest }}
-            ```
+            | ダイジェスト | `${{ steps.current.outputs.current_full_digest }}` | `${{ steps.latest.outputs.latest_full_digest }}` |
 
             ### 関連リンク
-            - [media-proxy-rsレポジトリ](https://github.com/nyaone/media-proxy-rs)
-            - [イメージレジストリ](https://github.com/nyaone/media-proxy-rs/pkgs/container/media-proxy-rs)
-          branch: update-media-proxy-rs-${{ steps.latest.outputs.latest_version }}
+            - [media-proxy-rsレポジトリ](https://github.com/yojo-art/media-proxy-rs)
+            - [コミット履歴](https://github.com/yojo-art/media-proxy-rs/commits/main/)
+            - [イメージレジストリ](https://github.com/yojo-art/media-proxy-rs/pkgs/container/media-proxy-rs)
+          branch: update-media-proxy-rs
           delete-branch: true
           labels: |
             dependencies

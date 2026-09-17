@@ -8,7 +8,7 @@ misskey.blueと関連サーバをいい感じに構築/運用するためのレ�
 | パス | 内容 |
 |---|---|
 | `hosts/misskey-blue/` | 本体。proxy(Caddy), maintenance, app(misskey-tempura), redis, db(PGroonga), backup(misskey-backup)。`.config/`にMisskey, Caddy, backupの設定、hotpatchスクリプトもここに置く |
-| `hosts/media-proxy/` | メディアプロキシ。proxy(Caddy), media-proxy([media-proxy-rs](https://github.com/nyaone/media-proxy-rs))。`media-proxy.misskey.blue`として公開し、misskey.blue以外のインスタンスからも参照する |
+| `hosts/media-proxy/` | メディアプロキシ。proxy(Caddy), media-proxy([media-proxy-rs](https://github.com/yojo-art/media-proxy-rs))。`media-proxy.misskey.blue`として公開し、misskey.blue以外のインスタンスからも参照する |
 | `shared/` | ホスト間で共有するCloudflare Origin証明書(`certificate.pem`, `key.pem`) |
 | `.doco-cd.<target>.yaml` | doco-cdのデプロイ設定(ホストごと)。`.doco-cd.yaml`は本体ホストのpoll切替完了までの暫定 |
 | `doco-cd/` | doco-cd本体のcompose.yamlとポーリング設定テンプレート(Ansibleがサーバの`/home/ubuntu/doco-cd`へ配置) |
