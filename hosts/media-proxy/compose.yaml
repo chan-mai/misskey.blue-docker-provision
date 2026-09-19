@@ -16,7 +16,7 @@ services:
       - internal_network
 
   media-proxy:
-    image: ghcr.io/yojo-art/media-proxy-rs:main@sha256:65c2d90bcf50b4b29e12bbbba85efc6a103ce183254edb6edeff6169ed22b705
+    image: ghcr.io/yojo-art/media-proxy-rs:main@sha256:d64aa2356b0cde5576cb55524121fa75c03b17249261d92b775df17a669553ca
     restart: always
     environment:
       MEDIA_PROXY_CONFIG_PATH: /etc/media-proxy/config.json
