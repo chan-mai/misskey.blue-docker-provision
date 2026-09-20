@@ -30,7 +30,7 @@ jobs:
         id: current
         run: |
           # hosts/media-proxy/compose.yamlから現在のダイジェストを取得
-          CURRENT_LINE=$(grep "ghcr.io/yojo-art/media-proxy-rs" hosts/media-proxy/compose.yaml)
+          CURRENT_LINE=$(grep "ghcr.io/chan-mai/media-proxy-rs" hosts/media-proxy/compose.yaml)
           echo "Current line from hosts/media-proxy/compose.yaml: $CURRENT_LINE"
 
           CURRENT_FULL_DIGEST=$(echo "$CURRENT_LINE" | sed -n 's/.*@\(sha256:[a-f0-9]*\).*/\1/p')
@@ -41,7 +41,7 @@ jobs:
         id: latest
         run: |
           # mainタグの最新ダイジェストを取得(リリースタグが無いためダイジェスト追従)
-          FULL_DIGEST=$(docker buildx imagetools inspect "ghcr.io/yojo-art/media-proxy-rs:main" --format "{{json .Manifest}}" | jq -r '.digest')
+          FULL_DIGEST=$(docker buildx imagetools inspect "ghcr.io/chan-mai/media-proxy-rs:main" --format "{{json .Manifest}}" | jq -r '.digest')
           SHORT_DIGEST=$(echo "$FULL_DIGEST" | sed 's/sha256://' | cut -c1-12)
 
           echo "latest_full_digest=$FULL_DIGEST" >> $GITHUB_OUTPUT
@@ -69,9 +69,9 @@ jobs:
         if: steps.check.outputs.update_available == 'true'
         run: |
           FULL_DIGEST="${{ steps.latest.outputs.latest_full_digest }}"
-          NEW_LINE="    image: ghcr.io/yojo-art/media-proxy-rs:main@${FULL_DIGEST}"
+          NEW_LINE="    image: ghcr.io/chan-mai/media-proxy-rs:main@${FULL_DIGEST}"
 
-          sed -i "s|.*ghcr.io/yojo-art/media-proxy-rs.*|${NEW_LINE}|" hosts/media-proxy/compose.yaml
+          sed -i "s|.*ghcr.io/chan-mai/media-proxy-rs.*|${NEW_LINE}|" hosts/media-proxy/compose.yaml
 
           echo "New image reference: ${NEW_LINE}"
           echo "--- Git diff ---"
@@ -95,9 +95,9 @@ jobs:
             | ダイジェスト | `${{ steps.current.outputs.current_full_digest }}` | `${{ steps.latest.outputs.latest_full_digest }}` |
 
             ### 関連リンク
-            - [media-proxy-rsレポジトリ](https://github.com/yojo-art/media-proxy-rs)
-            - [コミット履歴](https://github.com/yojo-art/media-proxy-rs/commits/main/)
-            - [イメージレジストリ](https://github.com/yojo-art/media-proxy-rs/pkgs/container/media-proxy-rs)
+            - [media-proxy-rsレポジトリ](https://github.com/chan-mai/media-proxy-rs)
+            - [コミット履歴](https://github.com/chan-mai/media-proxy-rs/commits/main/)
+            - [イメージレジストリ](https://github.com/chan-mai/media-proxy-rs/pkgs/container/media-proxy-rs)
           branch: update-media-proxy-rs
           delete-branch: true
           labels: |
