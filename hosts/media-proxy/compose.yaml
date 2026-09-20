@@ -16,7 +16,7 @@ services:
       - internal_network
 
   media-proxy:
-    image: ghcr.io/chan-mai/media-proxy-rs:main@sha256:e7211ce759b6b98d3a5c06cfd865f8612039ee399fa68b1c9a00cef185259dc4
+    image: ghcr.io/chan-mai/media-proxy-rs:main@sha256:4a7ead53a5fe84d4c21c56cc7181e6d2e42fd10735e3941d70267928342c25f0
     restart: always
     environment:
       MEDIA_PROXY_CONFIG_PATH: /etc/media-proxy/config.json
