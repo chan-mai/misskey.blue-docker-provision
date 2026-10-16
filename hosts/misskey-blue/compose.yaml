@@ -45,7 +45,7 @@ services:
     environment:
       COREPACK_INTEGRITY_KEYS: 0
       NODE_OPTIONS: --max-old-space-size=640
-    mem_limit: 900m
+    mem_limit: 1024m
     healthcheck:
       test: ["CMD", "/bin/bash", "/misskey/healthcheck.sh"]
       interval: 30s
@@ -93,7 +93,7 @@ services:
     command:
       - postgres
       - -c
-      - shared_buffers=256MB
+      - shared_buffers=384MB
       - -c
       - effective_cache_size=768MB
       - -c
@@ -117,7 +117,9 @@ services:
       - -c
       - shared_preload_libraries=pg_stat_statements
     shm_size: 128m
-    mem_limit: 700m
+    mem_limit: 1280m
+    # shared_buffersのswap移動防止
+    memswap_limit: 1280m
     stop_grace_period: 1m
     logging: *logging
     ports:
