@@ -14,6 +14,8 @@ misskey.blueと関連サーバをいい感じに構築/運用するためのレ�
 | `doco-cd/` | doco-cd本体のcompose.yamlとポーリング設定テンプレート(Ansibleがサーバの`/home/ubuntu/doco-cd`へ配置) |
 | `ansible/` | サーバ構築(`setup.yml`)とサーバ移行(`migrate.yml`)。共通変数は`group_vars/all.yml`、ホスト固有値は`host_vars/<host>.yml` |
 | `.github/workflows/` | イメージ更新のPRを自動作成 |
+| `test/` | app, db, redisの起動テスト用composeと平文設定 |
+| `scripts/` | 起動テストの実行スクリプト |
 
 データは名前付きvolumeに保存される。
 - misskey-blue: `misskeyblue-docker-provision_` + `pg-18`, `redis`, `caddy-data`, `caddy-config`, `caddy-logs`, `mi-backups`

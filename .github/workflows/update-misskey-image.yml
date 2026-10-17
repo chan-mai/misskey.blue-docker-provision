@@ -129,6 +129,10 @@ jobs:
           echo "--- Git diff ---"
           git diff hosts/misskey-blue/compose.yaml
 
+      - name: Test migration and healthcheck
+        if: steps.check.outputs.update_available == 'true'
+        run: scripts/misskey-test.sh
+
       - name: Create Pull Request
         if: steps.check.outputs.update_available == 'true'
         uses: peter-evans/create-pull-request@v6
